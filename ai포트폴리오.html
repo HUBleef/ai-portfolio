@@ -1,0 +1,701 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARCANE REALM | Digital Grimoire</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- 1. 기본 설정 (Reset & Base - 판타지 테마) --- */
+        :root {
+            --bg-color: #0e001a; /* 깊은 어둠 */
+            --text-color: #e0d2b4; /* 오래된 종이색 */
+            --accent-gold: #d4af37; /* 찬란한 금색 */
+            --accent-magic: #9d00ff; /* 신비한 보라색 마법 기운 */
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            cursor: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Cormorant Garamond', serif;
+            overflow-x: hidden;
+            line-height: 1.8;
+            font-size: 1.1rem;
+        }
+
+        a { text-decoration: none; color: var(--accent-gold); transition: 0.3s; }
+        a:hover { color: var(--accent-magic); text-shadow: 0 0 10px var(--accent-magic); }
+
+        /* --- 2. 커스텀 커서 (Magic Wisp) --- */
+        .cursor {
+            position: fixed;
+            width: 15px;
+            height: 15px;
+            background: var(--accent-gold);
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+            transition: width 0.3s, height 0.3s;
+            box-shadow: 0 0 20px var(--accent-gold), 0 0 40px var(--accent-magic);
+            mix-blend-mode: screen;
+        }
+        .cursor.hovered {
+            width: 30px;
+            height: 30px;
+            background: var(--accent-magic);
+            box-shadow: 0 0 30px var(--accent-magic), 0 0 60px var(--accent-gold);
+        }
+
+        /* --- 3. 배경 애니메이션 캔버스 --- */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: radial-gradient(circle at bottom, #220033 0%, #0e001a 100%);
+        }
+
+        /* --- 4. 레이아웃 및 공통 스타일 --- */
+        section {
+            padding: 120px 10%;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            position: relative;
+        }
+
+        /* 판타지 스타일 제목 */
+        h2 {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 3.5rem;
+            margin-bottom: 60px;
+            color: var(--accent-gold);
+            text-align: center;
+            text-shadow: 0 0 15px rgba(212, 175, 55, 0.5);
+            position: relative;
+            display: table;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        /* 제목 아래 장식 */
+        h2::after {
+            content: '✦ ✦ ✦';
+            display: block;
+            text-align: center;
+            font-size: 1.5rem;
+            color: var(--accent-magic);
+            margin-top: 15px;
+            letter-spacing: 10px;
+        }
+
+        /* 스크롤 등장 효과 */
+        .reveal {
+            opacity: 0;
+            transform: translateY(70px);
+            transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* --- 5. Hero Section (메인) --- */
+        #hero {
+            align-items: center;
+            text-align: center;
+        }
+
+        .hero-title {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 5.5rem;
+            font-weight: 900;
+            margin-bottom: 30px;
+            color: var(--accent-gold);
+            text-shadow: 0 0 10px var(--accent-gold), 0 0 30px var(--accent-magic), 0 0 70px var(--accent-magic);
+            animation: arcanePulse 4s infinite alternate;
+        }
+
+        .hero-subtitle {
+            font-size: 1.8rem;
+            color: var(--text-color);
+            font-style: italic;
+            letter-spacing: 1px;
+            margin-bottom: 50px;
+            opacity: 0.8;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 40px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: var(--accent-gold);
+            font-family: 'Cinzel Decorative';
+            animation: float 2s infinite ease-in-out;
+        }
+        .scroll-indicator span {
+            font-size: 2rem;
+            margin-top: -10px;
+        }
+
+        /* --- 6. Gallery Grid & Cards (고대 마법 카드 스타일) --- */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 60px;
+            width: 100%;
+        }
+
+        .card {
+            position: relative;
+            background: #1a0f24;
+            border: 2px solid var(--accent-gold);
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            cursor: pointer; /* 클릭 가능함을 표시 */
+        }
+
+        .card:hover {
+            transform: translateY(-15px);
+            box-shadow: 0 20px 50px rgba(157, 0, 255, 0.4), 0 0 20px var(--accent-gold);
+            border-color: var(--accent-magic);
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top:0; left:0; width:100%; height:100%;
+            background: url('https://www.transparenttextures.com/patterns/aged-paper.png');
+            opacity: 0.2;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .card-img-wrapper {
+            width: 100%;
+            height: 450px;
+            overflow: hidden;
+            border-bottom: 2px solid var(--accent-gold);
+        }
+
+        .card-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.6s ease, filter 0.6s ease;
+            filter: sepia(30%) brightness(0.8);
+        }
+
+        .card:hover .card-img {
+            transform: scale(1.08);
+            filter: sepia(0%) brightness(1.1);
+        }
+
+        .card-info {
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .card-title {
+            font-family: 'Cinzel Decorative', cursive;
+            font-size: 1.8rem;
+            margin-bottom: 15px;
+            color: var(--accent-gold);
+        }
+
+        /* --- 7. Video Section (마법의 거울) --- */
+        .video-frame {
+            width: 100%;
+            max-width: 900px;
+            margin: 0 auto;
+            aspect-ratio: 16/9;
+            background: #000;
+            border: 5px solid var(--accent-gold);
+            outline: 3px solid var(--accent-magic);
+            outline-offset: 5px;
+            box-shadow: 0 0 50px rgba(157, 0, 255, 0.5), inset 0 0 50px rgba(0,0,0,0.8);
+            position: relative;
+            overflow: hidden;
+            border-radius: 4px;
+        }
+
+        .video-container {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #111;
+        }
+        .video-container video, 
+        .video-container iframe {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+         .video-placeholder {
+            color: var(--accent-gold);
+            font-family: 'Cinzel Decorative';
+            text-align: center;
+            z-index: 2;
+        }
+        /* --- 10. 비디오 컨트롤러 (고풍스러운 버튼) --- */
+.video-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 15px;
+    margin-top: 40px;
+}
+
+.control-btn {
+    font-family: 'Cinzel Decorative', cursive;
+    background: var(--accent-gold);
+    color: var(--bg-color);
+    border: 2px solid var(--accent-magic);
+    padding: 10px 20px;
+    font-size: 1rem;
+    cursor: none; /* 커스텀 커서 사용 */
+    transition: background 0.3s, transform 0.1s;
+    box-shadow: 0 5px 15px rgba(212, 175, 55, 0.5);
+}
+
+.control-btn:hover {
+    background: var(--accent-magic);
+    color: var(--text-color);
+    box-shadow: 0 5px 20px rgba(157, 0, 255, 0.8);
+    transform: translateY(-2px);
+}
+
+.time-display {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 1.1rem;
+    color: var(--text-color);
+    opacity: 0.8;
+}
+
+/* 프로그레스 바 스타일 (마법 에너지 바처럼) */
+#progress-bar {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 300px;
+    height: 8px;
+    background: #330055; /* 어두운 마나 게이지 배경 */
+    border-radius: 4px;
+    cursor: pointer;
+    border: 1px solid var(--accent-gold);
+    transition: box-shadow 0.3s;
+}
+
+#progress-bar::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background: var(--accent-gold); /* 금색 조절점 */
+    border: 2px solid var(--accent-magic);
+    box-shadow: 0 0 10px var(--accent-magic);
+}
+
+        /* --- 8. Footer --- */
+        footer {
+            padding: 80px 20px;
+            text-align: center;
+            background: #090011;
+            border-top: 2px solid var(--accent-gold);
+            font-size: 1rem;
+            color: var(--accent-gold);
+            opacity: 0.7;
+        }
+
+        /* --- Keyframes --- */
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, 0); }
+            50% { transform: translate(-50%, 15px); }
+        }
+        
+        @keyframes arcanePulse {
+            from { text-shadow: 0 0 10px var(--accent-gold), 0 0 20px var(--accent-magic); }
+            to { text-shadow: 0 0 20px var(--accent-gold), 0 0 50px var(--accent-magic), 0 0 80px var(--accent-magic); }
+        }
+
+        /* 모바일 대응 */
+        @media (max-width: 768px) {
+            .hero-title { font-size: 3.5rem; }
+            h2 { font-size: 2.5rem; }
+            section { padding: 100px 5%; }
+        }
+
+        /* ⭐⭐⭐ 9. Lightbox CSS (클릭 시 이미지 전체보기) - 이전에 추가 요청했던 코드 ⭐⭐⭐ */
+        .lightbox {
+            display: none; 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(14, 0, 26, 0.95); 
+            z-index: 10000;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.4s ease-in-out;
+        }
+
+        .lightbox.active {
+            display: flex;
+            opacity: 1;
+        }
+
+        .lightbox-content {
+            max-width: 90%;
+            max-height: 90%;
+            box-shadow: 0 0 50px rgba(157, 0, 255, 0.8);
+            border: 3px solid var(--accent-gold);
+            transform: scale(0.8);
+            transition: transform 0.4s ease-in-out;
+        }
+
+        .lightbox.active .lightbox-content {
+            transform: scale(1);
+        }
+
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 100vh;
+            display: block;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 30px;
+            right: 50px;
+            color: var(--accent-gold);
+            font-size: 3rem;
+            font-family: 'Cinzel Decorative', cursive;
+            cursor: none;
+            opacity: 0.7;
+            transition: opacity 0.3s;
+        }
+
+        .lightbox-close:hover {
+            opacity: 1;
+            text-shadow: 0 0 10px var(--accent-magic);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cursor"></div>
+
+    <canvas id="bg-canvas"></canvas>
+
+    <div id="lightbox" class="lightbox">
+        <div class="lightbox-content">
+            <img id="lightbox-image" src="" alt="확대된 AI 작품">
+        </div>
+        <span class="lightbox-close" onclick="closeLightbox()">CLOSE ✦</span>
+    </div>
+    <section id="hero">
+        <div class="content">
+            <h1 class="hero-title reveal">ARCANE REALM</h1>
+            <p class="hero-subtitle reveal">AI GENERATED ART PORTFOLIO<br>2023981005 김서진</p>
+        </div>
+        <div class="scroll-indicator">
+            Explore the Grimoire
+            <span>✦</span>
+        </div>
+    </section>
+
+    <section id="characters">
+        <h2 class="reveal">AI CHARACTERS</h2>
+        <div class="gallery-grid">
+            
+            <article class="card reveal" onclick="openLightbox('캐릭터1.png')">
+                <div class="card-img-wrapper">
+                    <img src="캐릭터1.png" alt="Erion" class="card-img"> 
+                </div>
+                <div class="card-info">
+                    <h3 class="card-title">Erion</h3>
+                    <p>판타지 속 모험가를 AI로 창조, 중세 판타지풍 복장과 모험가적 요소를 넣었습니다.</p>
+                </div>
+            </article>
+
+            <article class="card reveal" onclick="openLightbox('캐릭터2.jpg')">
+                <div class="card-img-wrapper">
+                    <img src="캐릭터2.jpg" alt="Ner" class="card-img">
+                </div>
+                <div class="card-info">
+                    <h3 class="card-title">Ner</h3>
+                    <p>마찬가지로 판타지 속 요정 등 신비한 존재를 AI로 구현, 신비로운 느낌의 빛과 머리카락을 연출했습니다.</p>
+                </div>
+            </article>
+
+        </div>
+    </section>
+
+  <section id="video">
+        <h2 class="reveal">AI COMMERCIAL</h2>
+        <div class="video-frame reveal">
+            <div class="video-container">
+                <video id="magic-video" video src="꿀초콜릿광고.mp4" loop muted playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+            </div>
+        </div>
+        <div class="video-controls reveal">
+            <button id="play-pause-btn" class="control-btn" onclick="togglePlayPause()">
+                ▶️ CONJURE (재생)
+            </button>
+            
+            <span id="current-time" class="time-display">0:00</span>
+            
+            <input type="range" id="progress-bar" value="0" min="0" max="100" step="0.1">
+            
+            <span id="duration" class="time-display">0:00</span>
+        </div>
+        <p class="reveal" style="text-align: center; margin-top: 30px; max-width: 800px; margin-left: auto; margin-right: auto;">
+            AI 영상 생성 모델을 활용하여 제작한 꿀이 든 초콜릿 광고 영상입니다. 초콜릿의 달콤함 속 딥한 느낌과 꿀의 끈적거리는 질감을 표현했습니다.
+        </p>
+    </section>
+
+    <footer>
+        <p>Designed & Conjured by Gemini. &copy; 2024 ARCANE REALM.</p>
+    </footer>
+
+    <script>
+        // --- 1. 커스텀 커서 (마법 불꽃) ---
+        const cursor = document.querySelector('.cursor');
+        let mouseX = 0, mouseY = 0;
+        let cursorX = 0, cursorY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            mouseX = e.clientX;
+            mouseY = e.clientY;
+        });
+
+        // 부드러운 커서 추적 (Lag 효과)
+        function animateCursor() {
+            cursorX += (mouseX - cursorX) * 0.15;
+            cursorY += (mouseY - cursorY) * 0.15;
+            cursor.style.left = cursorX + 'px';
+            cursor.style.top = cursorY + 'px';
+            requestAnimationFrame(animateCursor);
+        }
+        animateCursor();
+
+        const hoverElements = document.querySelectorAll('a, .card, .video-frame');
+        hoverElements.forEach(el => {
+            el.addEventListener('mouseenter', () => cursor.classList.add('hovered'));
+            el.addEventListener('mouseleave', () => cursor.classList.remove('hovered'));
+        });
+
+
+        // --- 2. 스크롤 애니메이션 (Reveal) ---
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('active');
+                }
+            });
+        }, { threshold: 0.15 });
+
+        document.querySelectorAll('.reveal').forEach(el => {
+            observer.observe(el);
+        });
+
+
+        // --- 3. 배경 캔버스 애니메이션 (떠오르는 마나 입자) ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+        let particles = [];
+
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+
+        class Particle {
+            constructor() {
+                this.reset();
+                this.y = Math.random() * height;
+            }
+            
+            reset() {
+                this.x = Math.random() * width;
+                this.y = height + Math.random() * 100;
+                this.speed = Math.random() * 0.8 + 0.2;
+                this.size = Math.random() * 2.5 + 0.5;
+                this.opacity = Math.random() * 0.5 + 0.1;
+                this.drift = (Math.random() - 0.5) * 0.5;
+                this.color = Math.random() > 0.5 ? '212, 175, 55' : '157, 0, 255';
+            }
+            
+            update() {
+                this.y -= this.speed;
+                this.x += this.drift;
+                
+                if (this.y < -10) {
+                    this.reset();
+                }
+            }
+            
+            draw() {
+                ctx.fillStyle = `rgba(${this.color}, ${this.opacity})`;
+                ctx.shadowBlur = 15;
+                ctx.shadowColor = `rgb(${this.color})`;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            }
+        }
+
+        function initParticles() {
+            particles = [];
+            const particleCount = Math.floor(width / 8);
+            for (let i = 0; i < particleCount; i++) {
+                particles.push(new Particle());
+            }
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            particles.forEach(p => p.update());
+            particles.forEach(p => p.draw());
+            requestAnimationFrame(animate);
+        }
+        
+        window.addEventListener('resize', () => { resize(); initParticles(); });
+        resize(); initParticles(); animate();
+
+
+        // ⭐⭐⭐ 4. Lightbox JavaScript 함수 (이전에 추가 요청했던 코드) ⭐⭐⭐
+        // --- 라이트박스 기능 (Lightbox Functions) ---
+
+        // 라이트박스 열기
+        function openLightbox(imageSrc) {
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImage = document.getElementById('lightbox-image');
+
+            // 1. 이미지 소스 변경
+            lightboxImage.src = imageSrc;
+            
+            // 2. 라이트박스 표시 (display: flex와 opacity 애니메이션 적용)
+            lightbox.classList.add('active');
+            
+            // 3. 스크롤 잠금 (뒷 배경 스크롤 방지)
+            document.body.style.overflow = 'hidden';
+
+            // 4. 커스텀 커서를 잠시 숨김 
+            document.querySelector('.cursor').style.display = 'none'; 
+        }
+
+        // 라이트박스 닫기
+        function closeLightbox() {
+            const lightbox = document.getElementById('lightbox');
+            
+            // 1. 라이트박스 숨김
+            lightbox.classList.remove('active');
+            
+            // 2. 스크롤 잠금 해제
+            document.body.style.overflow = 'auto';
+
+            // 3. 커스텀 커서 다시 표시
+            document.querySelector('.cursor').style.display = 'block';
+        }
+
+        // 라이트박스 외부 클릭 시 닫기
+        document.getElementById('lightbox').addEventListener('click', function(e) {
+            // 이미지나 닫기 버튼이 아닌 배경을 클릭했을 때만 닫기
+            if (e.target.id === 'lightbox') {
+                closeLightbox();
+            }
+        });
+        
+        // --- 5. 비디오 제어 기능 (Video Control Logic) ---
+const video = document.getElementById('magic-video');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const currentTimeSpan = document.getElementById('current-time');
+        const durationSpan = document.getElementById('duration');
+
+
+        // 시간 형식을 '분:초'로 변환하는 함수
+        function formatTime(seconds) {
+            const minutes = Math.floor(seconds / 60);
+            const remainingSeconds = Math.floor(seconds % 60);
+            const paddedSeconds = remainingSeconds < 10 ? '0' + remainingSeconds : remainingSeconds;
+            return `${minutes}:${paddedSeconds}`;
+        }
+
+        // 비디오 객체가 로드되었을 때만 이벤트 리스너를 붙입니다.
+        if (video) {
+            // 비디오 메타데이터 로드 시 (총 시간 설정)
+            video.addEventListener('loadedmetadata', () => {
+                durationSpan.textContent = formatTime(video.duration);
+                progressBar.max = video.duration;
+            });
+
+            // 재생/일시 정지 토글 함수
+            function togglePlayPause() {
+                if (video.paused || video.ended) {
+                    video.play();
+                    playPauseBtn.textContent = '⏸️ BANISH (일시정지)';
+                } else {
+                    video.pause();
+                    playPauseBtn.textContent = '▶️ CONJURE (재생)';
+                }
+            }
+            window.togglePlayPause = togglePlayPause; // HTML onclick에서 접근 가능하도록 전역 설정
+
+            // 재생 중 시간 및 프로그레스 바 업데이트
+            video.addEventListener('timeupdate', () => {
+                // 1. 현재 시간 업데이트
+                currentTimeSpan.textContent = formatTime(video.currentTime);
+                
+                // 2. 프로그레스 바 업데이트
+                progressBar.value = video.currentTime;
+            });
+
+            // 프로그레스 바 클릭(끌기) 시 영상 위치 변경
+            progressBar.addEventListener('input', () => {
+                video.currentTime = progressBar.value;
+            });
+
+            // 페이지 로드 후 비디오를 일시 정지 상태로 유지 (autoplay를 제거했으므로 이 부분이 확실하게 작동합니다)
+            window.addEventListener('load', () => {
+                // 비디오가 로드되면 초기 상태를 '재생' 버튼으로 설정
+                if (video.readyState >= 2) {
+                    video.pause();
+                    playPauseBtn.textContent = '▶️ CONJURE (재생)';
+                }
+            });
+        }
+    </script>
+</body>
+</html>
